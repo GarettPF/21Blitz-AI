@@ -19,6 +19,8 @@ class Game {
 
 		int points;
 		int size;
+		int busts;
+		bool GameOver;
 
 		void clearStack(vector<Card *> &s) {
 			Card *card;
@@ -35,10 +37,10 @@ class Game {
 				clear = true;
 				points += 200;
 			} else if (hasAce && sum+1 > 21) {
-				//lives -=1;
+				busts += 1;
 				clear = true;
 			} else if (!hasAce && sum > 21) {
-				//lives -=1;
+				busts += 1;
 				clear = true;
 			}
 			if (size == 5) { // contains 5 cards
@@ -57,6 +59,8 @@ class Game {
 
 	public:
 		Game() {
+			GameOver = false;
+			busts = 0;
 			points = 0;
 			shuffle();
 			top = deck.back();
@@ -131,12 +135,20 @@ class Game {
 				if (results(sum, stack[s].size(), hasAce, hasWild))
 					clearStack(stack[s]);
 			}
+
+			if (busts == 3)
+				GameOver = true;
+		}
+
+		bool done() const {
+			return GameOver;
 		}
 
 		friend ostream &operator<<(ostream &lhs, Game &rhs) {
 			char suite, display[13] = {'A','2','3','4','5','6','7','8','9','T','J','Q','K'};
 			int value;
 			
+			lhs << "Busts: " << rhs.busts << endl;
 			lhs << "POINTS: " << rhs.points << endl;
 			lhs << " S1   S2   S3   S4" << endl;
 

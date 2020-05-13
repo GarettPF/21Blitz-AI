@@ -5,7 +5,7 @@ int main() {
 
 	Game game;
 
-	while (true) {
+	while (!game.done()) {
 		cout << game;
 		game.choose();
 		game.update();
