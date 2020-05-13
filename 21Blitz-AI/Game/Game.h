@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <string>
 #include <cstdlib>
 #include <time.h>
 #include <vector>
@@ -165,8 +167,15 @@ class Game {
 				GameOver = true;
 		}
 
-		bool done() const {
+		bool gameOver() const {
 			return GameOver;
+		}
+
+		void record(ofstream &outfile) const {
+			outfile << cur.points << ", "
+			//  << cur.time << ", "
+				<< cur.busts << ", "
+				<< cur.deckSize << endl;
 		}
 
 		friend ostream &operator<<(ostream &lhs, Game &rhs) {
@@ -175,7 +184,7 @@ class Game {
 			
 			lhs << "Busts: " << rhs.cur.busts << endl;
 			lhs << "POINTS: " << rhs.cur.points << endl;
-			lhs << " S1   S2   S3   S4" << endl;
+			lhs << "S1   S2   S3   S4" << endl;
 
 			for (int c=0; c < 5; c++) {
 				for (int s=0; s < 4; s++) {

@@ -129,6 +129,9 @@
     <ClInclude Include="Game\Card.h" />
     <ClInclude Include="Game\Game.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Game\stats.csv" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
