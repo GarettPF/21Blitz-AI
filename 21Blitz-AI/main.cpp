@@ -12,5 +12,8 @@ int main() {
 		system("cls");
 	}
 
+	cout << "Game Over" << endl;
+	system("pause");
+
 	return 0;
 }

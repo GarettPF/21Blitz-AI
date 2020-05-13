@@ -14,11 +14,20 @@ class Game {
 	private:
 		vector<Card *> deck;
 		vector<Card *> stack[4];
-
 		Card *top;
 
+		struct GameState {
+			vector<Card *> mDeck;
+			vector<Card *> mStack[4];
+			Card *mTop;
+			int mPoints;
+			int mDeckSize;
+			int mBusts;
+		};
+		GameState mem;
+
 		int points;
-		int size;
+		int deckSize;
 		int busts;
 		bool GameOver;
 
@@ -27,7 +36,6 @@ class Game {
 			while (s.size()) {
 				card = s.back();
 				s.pop_back();
-				delete card;
 			}
 		}
 
@@ -57,6 +65,16 @@ class Game {
 			return clear;
 		}
 
+		void undo() {
+			for (int i = 0; i < 4; i++)
+				stack[i] = mem.mStack[i];
+			deck = mem.mDeck;
+			top = mem.mTop;
+			points = mem.mPoints;
+			deckSize = mem.mDeckSize;
+			busts = mem.mBusts;
+		}
+
 	public:
 		Game() {
 			GameOver = false;
@@ -64,7 +82,7 @@ class Game {
 			points = 0;
 			shuffle();
 			top = deck.back();
-			size = deck.size();
+			deckSize = deck.size();
 		}
 
 		~Game() {
@@ -97,14 +115,30 @@ class Game {
 			int s;
 
 			do {
-				cout << "Choose a stack (1-4): ";
+				cout << "Choose a stack (1-4, 0 for undo): ";
 				cin >> s;
-			} while (s < 1 || s > 4);
+			} while (s < 0 || s > 4);
 
-			stack[s-1].push_back(top);
-			deck.pop_back();
-			size--;
-			top = deck.back();
+			if (s == 0 && deckSize != 52) {
+				undo();
+			} else if (s != 0) {
+				// save gamestate before changes
+				for (int i = 0; i < 4; i++)
+					mem.mStack[i] = stack[i];
+				mem.mDeck = deck;
+				mem.mTop = top;
+				mem.mPoints = points;
+				mem.mDeckSize = deckSize;
+				mem.mBusts = busts;
+
+				// next gamestate
+				stack[s-1].push_back(top);
+				deck.pop_back();
+				deckSize--;
+				top = deck.back();
+			} else {
+				choose();
+			}
 		}
 
 		void update() {
@@ -170,12 +204,10 @@ class Game {
 			lhs << "Current Card: " 
 				<< display[rhs.top->value()-1] << rhs.top->suite()
 				<< endl;
-			lhs << "Cards left: " << rhs.deck.size() << endl;
+			lhs << "Cards left: " << rhs.deckSize << endl;
 
 			return lhs;
 		}
-
-
 };
 
 #endif //GAME_H
