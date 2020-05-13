@@ -20,7 +20,7 @@ class Card {
 			return Value;
 		}
 
-		int isWild() const {
+		bool isWild() const {
 			bool isBlack = (Suite == 's' || Suite == 'c'),
 				isJack = (Value == 11);
 			return (isJack && isBlack);

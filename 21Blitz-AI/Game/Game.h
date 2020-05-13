@@ -12,25 +12,20 @@ using namespace std;
 
 class Game {
 	private:
-		vector<Card *> deck;
-		vector<Card *> stack[4];
-		Card *top;
-
+		// private variables
 		struct GameState {
-			vector<Card *> mDeck;
-			vector<Card *> mStack[4];
-			Card *mTop;
-			int mPoints;
-			int mDeckSize;
-			int mBusts;
+			vector<Card *> deck;
+			vector<Card *> stack[4];
+			Card *top;
+			int points;
+			int deckSize;
+			int busts;
 		};
 		GameState mem;
-
-		int points;
-		int deckSize;
-		int busts;
+		GameState cur;
 		bool GameOver;
 
+		// private functions
 		void clearStack(vector<Card *> &s) {
 			Card *card;
 			while (s.size()) {
@@ -38,57 +33,55 @@ class Game {
 				s.pop_back();
 			}
 		}
-
 		bool results(int sum, int size, bool hasAce, bool hasWild) {
 			bool clear = false;
 			if (hasWild) { // has a black Jack
 				clear = true;
-				points += 200;
+				cur.points += 200;
 			} else if (hasAce && sum+1 > 21) {
-				busts += 1;
+				cur.busts += 1;
 				clear = true;
 			} else if (!hasAce && sum > 21) {
-				busts += 1;
+				cur.busts += 1;
 				clear = true;
 			}
 			if (size == 5) { // contains 5 cards
 				clear = true;
-				points += 600;
+				cur.points += 600;
 			}
 			if (hasAce && (sum+1 == 21 || sum+11 == 21)) {
 				clear = true;
-				points += 400;
+				cur.points += 400;
 			} else if (!hasAce && sum == 21) {
 				clear = true;
-				points += 400;
+				cur.points += 400;
 			}
 			return clear;
 		}
-
 		void undo() {
 			for (int i = 0; i < 4; i++)
-				stack[i] = mem.mStack[i];
-			deck = mem.mDeck;
-			top = mem.mTop;
-			points = mem.mPoints;
-			deckSize = mem.mDeckSize;
-			busts = mem.mBusts;
+				cur.stack[i] = mem.stack[i];
+			cur.deck = mem.deck;
+			cur.top = mem.top;
+			cur.points = mem.points;
+			cur.deckSize = mem.deckSize;
+			cur.busts = mem.busts;
 		}
 
 	public:
 		Game() {
 			GameOver = false;
-			busts = 0;
-			points = 0;
+			cur.points = 0;
+			cur.busts = 0;
 			shuffle();
-			top = deck.back();
-			deckSize = deck.size();
+			cur.deckSize = cur.deck.size();
+			cur.top = cur.deck.back();
+			mem = cur;
 		}
-
 		~Game() {
-			while (deck.size()) {
-				delete deck.back();
-				deck.pop_back();
+			while (cur.deck.size()) {
+				delete cur.deck.back();
+				cur.deck.pop_back();
 			}
 		}
 
@@ -98,7 +91,7 @@ class Game {
 			bool temp_deck[4][13] = { false };
 			Card *c_ptr;
 
-			while (deck.size() != 52) {
+			while (cur.deck.size() != 52) {
 				do {
 					v = rand() % 13;
 					s = rand() % 4;
@@ -107,7 +100,7 @@ class Game {
 				temp_deck[s][v] = true;
 				c_ptr = new Card(suites[s], v+1);
 
-				deck.push_back(c_ptr);
+				cur.deck.push_back(c_ptr);
 			}
 		}
 
@@ -119,25 +112,23 @@ class Game {
 				cin >> s;
 			} while (s < 0 || s > 4);
 
-			if (s == 0 && deckSize != 52) {
+			if (s == 0) {
 				undo();
-			} else if (s != 0) {
+			} else {
 				// save gamestate before changes
 				for (int i = 0; i < 4; i++)
-					mem.mStack[i] = stack[i];
-				mem.mDeck = deck;
-				mem.mTop = top;
-				mem.mPoints = points;
-				mem.mDeckSize = deckSize;
-				mem.mBusts = busts;
+					mem.stack[i] = cur.stack[i];
+				mem.deck = cur.deck;
+				mem.top = cur.top;
+				mem.points = cur.points;
+				mem.deckSize = cur.deckSize;
+				mem.busts = cur.busts;
 
 				// next gamestate
-				stack[s-1].push_back(top);
-				deck.pop_back();
-				deckSize--;
-				top = deck.back();
-			} else {
-				choose();
+				cur.stack[s-1].push_back(cur.top);
+				cur.deck.pop_back();
+				cur.deckSize--;
+				cur.top = cur.deck.back();
 			}
 		}
 
@@ -150,8 +141,8 @@ class Game {
 				sum = 0;
 				hasAce = hasWild = false;
 
-				for (int c=0; c < stack[s].size(); c++) {
-					card = stack[s].at(c);
+				for (int c=0; c < cur.stack[s].size(); c++) {
+					card = cur.stack[s].at(c);
 					val = 0;
 
 					if (card->value() > 10)
@@ -166,11 +157,11 @@ class Game {
 					sum += val;
 				}
 
-				if (results(sum, stack[s].size(), hasAce, hasWild))
-					clearStack(stack[s]);
+				if (results(sum, cur.stack[s].size(), hasAce, hasWild))
+					clearStack(cur.stack[s]);
 			}
 
-			if (busts == 3)
+			if (cur.busts == 3)
 				GameOver = true;
 		}
 
@@ -182,16 +173,16 @@ class Game {
 			char suite, display[13] = {'A','2','3','4','5','6','7','8','9','T','J','Q','K'};
 			int value;
 			
-			lhs << "Busts: " << rhs.busts << endl;
-			lhs << "POINTS: " << rhs.points << endl;
+			lhs << "Busts: " << rhs.cur.busts << endl;
+			lhs << "POINTS: " << rhs.cur.points << endl;
 			lhs << " S1   S2   S3   S4" << endl;
 
 			for (int c=0; c < 5; c++) {
 				for (int s=0; s < 4; s++) {
 					try {
 						lhs << setw(2);
-						suite = rhs.stack[s].at(c)->suite();
-						value = rhs.stack[s].at(c)->value();
+						suite = rhs.cur.stack[s].at(c)->suite();
+						value = rhs.cur.stack[s].at(c)->value();
 						lhs << display[value-1];
 						lhs << suite << "  ";
 					} catch (out_of_range e) {
@@ -202,9 +193,9 @@ class Game {
 			}
 
 			lhs << "Current Card: " 
-				<< display[rhs.top->value()-1] << rhs.top->suite()
+				<< display[rhs.cur.top->value()-1] << rhs.cur.top->suite()
 				<< endl;
-			lhs << "Cards left: " << rhs.deckSize << endl;
+			lhs << "Cards left: " << rhs.cur.deckSize << endl;
 
 			return lhs;
 		}
