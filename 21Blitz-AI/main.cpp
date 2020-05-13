@@ -5,8 +5,12 @@ int main() {
 
 	Game game;
 
-	cout << game;
-
+	while (true) {
+		cout << game;
+		game.choose();
+		game.update();
+		system("cls");
+	}
 
 	return 0;
 }

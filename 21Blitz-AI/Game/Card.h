@@ -19,6 +19,12 @@ class Card {
 		int value() const {
 			return Value;
 		}
+
+		int isWild() const {
+			bool isBlack = (Suite == 's' || Suite == 'c'),
+				isJack = (Value == 11);
+			return (isJack && isBlack);
+		}
 };
 
 #endif //CARD_H
