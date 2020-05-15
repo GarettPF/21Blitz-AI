@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClInclude Include="Game\Card.h" />
     <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Header.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Game\stats.csv" />

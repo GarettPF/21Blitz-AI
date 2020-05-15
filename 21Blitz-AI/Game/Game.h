@@ -1,13 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <cstdlib>
-#include <time.h>
-#include <vector>
+#include "../Header.h"
 #include "Card.h"
 
 using namespace std;
@@ -26,6 +20,8 @@ class Game {
 		GameState mem;
 		GameState cur;
 		bool GameOver;
+		time_t len;
+		thread *timer;
 
 		// private functions
 		void clearStack(vector<Card *> &s) {
@@ -69,6 +65,19 @@ class Game {
 			cur.deckSize = mem.deckSize;
 			cur.busts = mem.busts;
 		}
+		void startTimer() {
+			time_t start, current;
+			time(&start); // get time of when the game started
+			time(&current);
+			while (!GameOver) {
+				time(&current);
+				if (current - start >= 5) {
+					GameOver = true;
+				}
+			}
+
+			len = current - start;
+		}
 
 	public:
 		Game() {
@@ -79,12 +88,27 @@ class Game {
 			cur.deckSize = cur.deck.size();
 			cur.top = cur.deck.back();
 			mem = cur;
+			timer = new thread(&Game::startTimer, this);
 		}
 		~Game() {
-			while (cur.deck.size()) {
+			/*while (!cur.deck.empty()) {
 				delete cur.deck.back();
 				cur.deck.pop_back();
 			}
+			while (!mem.deck.empty()) {
+				delete mem.deck.back();
+				mem.deck.pop_back();
+			}
+			for (int i = 0; i < 4; i++) {
+				while (!cur.stack[i].empty()) {
+					delete cur.stack[i].back();
+					cur.stack[i].pop_back();
+				}
+				while (!mem.stack[i].empty()) {
+					delete mem.stack[i].back();
+					mem.stack[i].pop_back();
+				}
+			}*/
 		}
 
 		void shuffle() {
@@ -165,6 +189,10 @@ class Game {
 
 			if (cur.busts == 3)
 				GameOver = true;
+
+			if (!timer->joinable())
+				timer->join();
+
 		}
 
 		bool gameOver() const {
@@ -172,8 +200,11 @@ class Game {
 		}
 
 		void record(ofstream &outfile) const {
+			int min = len / 60;
+			int sec = len % 60;
+
 			outfile << cur.points << ", "
-			//  << cur.time << ", "
+			    << min<<":"<<sec << ", "
 				<< cur.busts << ", "
 				<< cur.deckSize << endl;
 		}
