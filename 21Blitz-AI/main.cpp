@@ -1,11 +1,12 @@
 #include "Game/Game.h"
 
 int main() {
-	// Before Game
 	srand((unsigned)time(NULL));
-	ofstream stats("Game/stats.csv", ios_base::app);
+	ofstream stats;
+
+	// Before Game
+	stats.open(STATS, ios_base::app);
 	if (!stats.is_open()) {
-		system("dir");
 		cout << "File couldn't open :(" << endl;
 		system("pause");
 	}

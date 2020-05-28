@@ -10,4 +10,6 @@
 #include <vector>
 #include <thread>
 
+const std::string STATS = "Game/stats.csv";
+
 #endif

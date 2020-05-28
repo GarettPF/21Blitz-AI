@@ -19,9 +19,10 @@ class Game {
 		};
 		GameState mem;
 		GameState cur;
+
+		vector<Card *> cards; // container for all cards
 		bool GameOver;
-		time_t len;
-		thread *timer;
+		time_t startTime, currentTime;
 
 		// private functions
 		void clearStack(vector<Card *> &s) {
@@ -31,84 +32,36 @@ class Game {
 				s.pop_back();
 			}
 		}
+		
 		bool results(int sum, int size, bool hasAce, bool hasWild) {
 			bool clear = false;
-			if (hasWild) { // has a black Jack
-				clear = true;
+
+			if (hasWild) {
 				cur.points += 200;
-			} else if (hasAce && sum+1 > 21) {
-				cur.busts += 1;
 				clear = true;
-			} else if (!hasAce && sum > 21) {
+				if (size == 5)
+					cur.points += 600;
+			} else if ((hasAce && sum+1 > 21) ||
+				(sum > 21)) {
 				cur.busts += 1;
 				clear = true;
 			}
-			if (size == 5) { // contains 5 cards
+
+			if ((hasAce && sum+1 == 21) ||
+				(hasAce && sum+11 == 21) ||
+				(sum == 21)) {
+				cur.points += 400;
 				clear = true;
+				if (size == 5)
+					cur.points += 600;
+			}
+
+			if (!clear && size == 5) {
 				cur.points += 600;
-			}
-			if (hasAce && (sum+1 == 21 || sum+11 == 21)) {
 				clear = true;
-				cur.points += 400;
-			} else if (!hasAce && sum == 21) {
-				clear = true;
-				cur.points += 400;
 			}
+
 			return clear;
-		}
-		void undo() {
-			for (int i = 0; i < 4; i++)
-				cur.stack[i] = mem.stack[i];
-			cur.deck = mem.deck;
-			cur.top = mem.top;
-			cur.points = mem.points;
-			cur.deckSize = mem.deckSize;
-			cur.busts = mem.busts;
-		}
-		void startTimer() {
-			time_t start, current;
-			time(&start); // get time of when the game started
-			time(&current);
-			while (!GameOver) {
-				time(&current);
-				if (current - start >= 5) {
-					GameOver = true;
-				}
-			}
-
-			len = current - start;
-		}
-
-	public:
-		Game() {
-			GameOver = false;
-			cur.points = 0;
-			cur.busts = 0;
-			shuffle();
-			cur.deckSize = cur.deck.size();
-			cur.top = cur.deck.back();
-			mem = cur;
-			timer = new thread(&Game::startTimer, this);
-		}
-		~Game() {
-			/*while (!cur.deck.empty()) {
-				delete cur.deck.back();
-				cur.deck.pop_back();
-			}
-			while (!mem.deck.empty()) {
-				delete mem.deck.back();
-				mem.deck.pop_back();
-			}
-			for (int i = 0; i < 4; i++) {
-				while (!cur.stack[i].empty()) {
-					delete cur.stack[i].back();
-					cur.stack[i].pop_back();
-				}
-				while (!mem.stack[i].empty()) {
-					delete mem.stack[i].back();
-					mem.stack[i].pop_back();
-				}
-			}*/
 		}
 
 		void shuffle() {
@@ -127,6 +80,29 @@ class Game {
 				c_ptr = new Card(suites[s], v+1);
 
 				cur.deck.push_back(c_ptr);
+				cards.push_back(c_ptr);
+			}
+		}
+
+
+	public:
+		Game() {
+			GameOver = false;
+			cur.points = 0;
+			cur.busts = 0;
+			shuffle();
+			cur.deckSize = cur.deck.size();
+			cur.top = cur.deck.back();
+			mem = cur;
+			time(&startTime);
+		}
+		~Game() {
+			Card *card;
+			
+			while (!cards.empty()) {
+				card = cards.back();
+				cards.pop_back();
+				delete card;
 			}
 		}
 
@@ -139,16 +115,10 @@ class Game {
 			} while (s < 0 || s > 4);
 
 			if (s == 0) {
-				undo();
+				cur = mem;
 			} else {
 				// save gamestate before changes
-				for (int i = 0; i < 4; i++)
-					mem.stack[i] = cur.stack[i];
-				mem.deck = cur.deck;
-				mem.top = cur.top;
-				mem.points = cur.points;
-				mem.deckSize = cur.deckSize;
-				mem.busts = cur.busts;
+				mem = cur;
 
 				// next gamestate
 				cur.stack[s-1].push_back(cur.top);
@@ -187,12 +157,10 @@ class Game {
 					clearStack(cur.stack[s]);
 			}
 
-			if (cur.busts == 3)
+			time(&currentTime);
+
+			if (cur.busts == 3 || currentTime - startTime >= 3*60)
 				GameOver = true;
-
-			if (!timer->joinable())
-				timer->join();
-
 		}
 
 		bool gameOver() const {
@@ -200,11 +168,15 @@ class Game {
 		}
 
 		void record(ofstream &outfile) const {
+			time_t len = currentTime - startTime;
+
 			int min = len / 60;
 			int sec = len % 60;
 
 			outfile << cur.points << ", "
-			    << min<<":"<<sec << ", "
+				<< min<<":";
+			if (sec < 10) outfile << "0";
+			outfile << sec << ", "
 				<< cur.busts << ", "
 				<< cur.deckSize << endl;
 		}
